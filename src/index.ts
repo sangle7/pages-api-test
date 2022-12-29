@@ -1,17 +1,23 @@
 import fetch, { Response } from 'node-fetch';
+import HttpsProxyAgent from 'https-proxy-agent';
 import { createPage, updatePage } from './createMockData';
 import { IPage } from './interface';
 import { compare } from './util';
 
+const proxyAgent = new HttpsProxyAgent('http://127.0.0.1:8899');
+
+process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0
+
 const myArgs = process.argv.slice(2);
 const token = myArgs[0];
-const baseUrl = "https://canary.graph.microsoft.com/testprodbeta14666-Operate-a-SharePoint-Page-by-API/sites/f9d54fba-563d-4ac5-9daa-dc5c096f174f"
+const baseUrl = "https://prepspo.spgrid.com/_api/v2.1/sites/root"
 
 const callCreatePage = (payload: any): Promise<any> => {
   return fetch(
     `${baseUrl}/pages`,
     {
       method: 'POST',
+      agent: proxyAgent,
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json;odata.metadata=none',
@@ -22,10 +28,11 @@ const callCreatePage = (payload: any): Promise<any> => {
   ).then(e => e.json())
 };
 
-const callUpdatePage = (uuid: string, payload: any) : Promise<any> => {
+const callUpdatePage = (uuid: string, payload: any): Promise<any> => {
   return fetch(
     `${baseUrl}/pages/${uuid}`,
     {
+      agent: proxyAgent,
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -39,8 +46,9 @@ const callUpdatePage = (uuid: string, payload: any) : Promise<any> => {
 
 const callFetchPage = (uuid: string, expand: boolean = false): Promise<any> => {
   return fetch(
-    `${baseUrl}/pages/${uuid}${expand && "?expand=canvasLayout"}`,
+    `${baseUrl}/pages/${uuid}${expand ? "?expand=canvasLayout" : ""}`,
     {
+      agent: proxyAgent,
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -59,6 +67,7 @@ const callListPages = (): string[] => {
     `${baseUrl}/pages?select=id`,
     {
       method: 'GET',
+      agent: proxyAgent,
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json;odata.metadata=none',
@@ -73,6 +82,7 @@ const callPublishPage = (uuid: string) => {
   fetch(
     `${baseUrl}/pages/${uuid}/publish`,
     {
+      agent: proxyAgent,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -89,6 +99,7 @@ const callDeletePage = (uuid: string) => {
     `${baseUrl}/pages/${uuid}`,
     {
       method: 'DELETE',
+      agent: proxyAgent,
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json;odata.metadata=none',
@@ -106,53 +117,69 @@ interface IResult {
   error?: string;
 }
 
-const testCreatePages = () => {
-  for (let i: number = 0; i < 50; i++) {
+const testCreatePages = async () => {
+  await Promise.all(new Array(50).fill(1).map(() => {
     const payload = createPage();
-    callCreatePage(payload)
+    return callCreatePage(payload)
       .then(res => {
         const { id } = res;
         if (!id) {
-          return Promise.reject("No id returned");
+          // @ts-ignore
+          return Promise.reject("No id returned： " + (res?.error?.innerError?.message || res?.error?.innerError?.innerError?.message));
         }
         return callFetchPage(id, true);
       }).then(page => {
         compare(payload, page)
-      }).catch(err => console.log)
-  }
-};
+      }).catch(console.log)
+  }));
+}
 
 const testUpdatePages = async () => {
   const listIds = await callListPages();
-  listIds.slice(0,50).forEach(id => { 
+  await Promise.all(listIds.slice(0, 50).map(id => {
     const payload = updatePage();
-    callUpdatePage(id, payload).then(res => {
+    return callUpdatePage(id, payload).then(res => {
       const { id } = res;
       if (!id) {
         // @ts-ignore
-        return Promise.reject("No id returned： " +(res?.error?.innerError?.message || res?.error?.innerError?.innerError?.message));
+        return Promise.reject("No id returned： " + (res?.error?.innerError?.message || res?.error?.innerError?.innerError?.message));
       }
       return callFetchPage(id, true);
     }).then(page => {
       compare(payload, page)
     }).catch(console.log)
-  });
+  }))
 };
 
 const testFetchPages = async () => {
   const listIds = await callListPages();
-  listIds.forEach(id => callFetchPage(id));
+  await Promise.all(listIds.map(id => {
+    return callFetchPage(id).then(item => {
+      console.log(`name: ${item.name}, id: ${item.id}`)
+    })
+  }))
 };
 
 const testDeletePages = async () => {
   const listIds = await callListPages();
-  listIds.forEach(id => callDeletePage(id));
+  await Promise.all(listIds.map(id => callDeletePage(id)))
 };
 
 const testPublishPages = async () => {
   const listIds = await callListPages();
-  listIds.forEach(id => callPublishPage(id));
+  await Promise.all(listIds.map(id => callPublishPage(id)))
 };
 
-testUpdatePages();
+!(async () => {
+  console.log('=========== create page =============')
+  await testCreatePages();
+  console.log('=========== update page =============')
+  await testUpdatePages();
+  console.log('=========== fetch page =============')
+  await testFetchPages();
+  console.log('=========== publish page =============')
+  await testPublishPages();
+  console.log('=========== delete page =============')
+  await testDeletePages();
+})();
 
