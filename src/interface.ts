@@ -17,6 +17,7 @@ export interface ICanvasLayout {
 }
 
 export interface IHorizontalSection {
+  id?: string;
   emphasis?: 'soft' | 'strong' | 'neutral' | 'none';
   layout: 'oneColumn' | 'twoColumns' | 'threeColumns' | 'oneThirdLeft' | 'oneThirdRight' | 'fullWidth';
   columns: IColumn[];

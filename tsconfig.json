@@ -25,13 +25,15 @@
     }
   },
   "compilerOptions": {
+    
     "esModuleInterop": true,
       "strict": true, 
       "skipLibCheck": true,
     "baseUrl": "./",
     "moduleResolution": "node",
     "types": [
-      "node"
+      "node",
+      "jest"
     ],
     "module": "CommonJS",
     "target": "esnext"

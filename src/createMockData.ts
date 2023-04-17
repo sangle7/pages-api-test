@@ -37,7 +37,7 @@ export const createCanvasLayout = (): Partial<ICanvasLayout> => {
   return cl;
 };
 
-const createHorizontalSection = (): IHorizontalSection => {
+export const createHorizontalSection = (): IHorizontalSection => {
   const v: IHorizontalSection = createColumns();
   v.emphasis = faker.helpers.arrayElement(['soft', 'strong', 'neutral', 'none'])
   return v;
@@ -52,18 +52,18 @@ const createColumns = (): IHorizontalSection => {
 
 const createColumn = (): IColumn => {
   return {
-    webparts: Array.from({ length: 2 }, createWebPart)
+    webparts: Array.from({ length: 2 }, createTextWebPart)
   }
 }
 
-const createVerticalSection = (): Partial<IVerticalSection> => {
+export const createVerticalSection = (): Partial<IVerticalSection> => {
   const v: Partial<IVerticalSection> = {};
-  v.webparts = Array.from({ length: 5 }, createWebPart)
+  v.webparts = Array.from({ length: 5 }, createTextWebPart)
   v.emphasis = faker.helpers.arrayElement(['soft', 'strong', 'neutral', 'none'])
   return v;
 }
 
-const createWebPart = (): IWebPart => {
+export const createTextWebPart = (): IWebPart => {
   return {
     innerHtml: `<p>${faker.lorem.paragraph()}</p>`
   }
