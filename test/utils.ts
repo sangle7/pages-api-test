@@ -6,7 +6,6 @@ import { IHorizontalSection, IVerticalSection } from '../src/interface';
 import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
 dotenv.config()
 
-
 const proxyAgent = HttpsProxyAgent('http://127.0.0.1:8899');
 
 const token: string = process.env.APP_TOKEN!;

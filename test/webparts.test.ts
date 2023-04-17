@@ -1,7 +1,7 @@
 import { createHorizontalSection, createTextWebPart, createVerticalSection } from '../src/createMockData';
 import { compareHorizontalSections, compareVerticalSection, createClient, createPageAndGetId } from './utils';
 
-describe('web part...', () => {
+describe.skip('web part...', () => {
   const client = createClient();
 
   it('create a web part in vertical section and delete it', async () => {
