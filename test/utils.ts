@@ -1,17 +1,20 @@
-
-import HttpsProxyAgent from 'https-proxy-agent';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import PagesAPIClient from '../src/client';
-import { createPage} from '../src/createMockData';
+import { createPage } from '../src/createMockData';
 import { IHorizontalSection, IVerticalSection } from '../src/interface';
 import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
 dotenv.config()
 
-const proxyAgent = HttpsProxyAgent('http://127.0.0.1:8899');
+const proxyAgent = new HttpsProxyAgent({
+  rejectUnauthorized: false,
+  host: '127.0.0.1',
+  port: 8899,
+  path: '/',
+  secureProxy: false
+});
 
 const token: string = process.env.APP_TOKEN!;
 const baseUrl = "https://canary.graph.microsoft.com/testprodbetasubtypes-for-pages/sites/root";
-
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
 export const createClient = () => new PagesAPIClient({
   baseUrl,
@@ -47,4 +50,24 @@ export function compareVerticalSection(v1: IVerticalSection, v2: IVerticalSectio
   v1.webparts?.forEach((webpart: any, i: number) => {
     expect(webpart).toEqual(expect.objectContaining(v2.webparts![i]));
   });
+}
+
+export const compareObject = (a: object, b: object, name: string = "") => {
+  expect(typeof a).toEqual(typeof b);
+
+  if (typeof a === 'object') {
+    if (Array.isArray(a) && Array.isArray(b)) {
+      // @ts-ignored
+      a.forEach((elem, i) => compareObject(elem, b[i], `${name}[${i}]`));
+    } else {
+      for (let key in a) {
+        // @ts-ignored
+        compareObject(a[key], b[key], key);
+      }
+    }
+  } else if (name === 'name'){
+    expect(a + ".aspx").toEqual(b);
+  } else {
+    expect(a).toEqual(b);
+  }
 }

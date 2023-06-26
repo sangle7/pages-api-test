@@ -1,15 +1,16 @@
-import fetch, { Response } from 'node-fetch';
-import HttpsProxyAgent from 'https-proxy-agent';
+import fetch from 'node-fetch';
+import {HttpsProxyAgent} from 'https-proxy-agent';
 import { createPage, updatePage } from './createMockData';
-import { IPage } from './interface';
 import { compare } from './util';
+import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
+dotenv.config()
 
 const proxyAgent = new HttpsProxyAgent('http://127.0.0.1:8899');
 
-process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0
+process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = '0'
 
 const myArgs = process.argv.slice(2);
-const token = myArgs[0];
+const token: string = process.env.APP_TOKEN!;
 const baseUrl = "https://prepspo.spgrid.com/_api/v2.1/sites/root"
 
 const callCreatePage = (payload: any): Promise<any> => {
