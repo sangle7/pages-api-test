@@ -1,6 +1,6 @@
-import fetch from 'node-fetch';
+import fetch, { HeadersInit } from 'node-fetch';
 import _HttpsProxyAgent from 'https-proxy-agent/dist/agent';
-import { createPage, updatePage } from './createMockData';
+import https, { Agent } from 'https'
 
 export interface IPagesAPIClientOptions {
   baseUrl: string;
@@ -8,80 +8,21 @@ export interface IPagesAPIClientOptions {
   proxyAgent?: _HttpsProxyAgent;
 }
 
-const endpoints = {
-  basePage: {
-    list: {
-      method: 'GET',
-      path: () => '/pages',
-    },
-    get: {
-      method: 'GET',
-      path: (id: string) => `/pages/${id}/`,
-    },
-    delete: {
-      method: 'DELETE',
-      path: (id: string) => `/pages/${id}`,
-      emptyRes: true,
-    }
-  },
-  page: {
-    create: {
-      method: 'POST',
-      path: () => '/pages',
-      body: (payload: any) => ({ ...payload, "@odata.type": "#microsoft.graph.sitepage" }),
-    },
-    update: {
-      method: 'PATCH',
-      path: (id: string) => `/pages/${id}/microsoft.graph.sitepage`,
-      body: (payload: any) => ({ ...payload, "@odata.type": "#microsoft.graph.sitepage" })
-    },
-    list: {
-      method: 'GET',
-      path: () => '/pages/microsoft.graph.sitepage',
-    },
-    get: {
-      method: 'GET',
-      path: (id: string) => `/pages/${id}/microsoft.graph.sitepage`,
-    },
-    publish: {
-      method: 'POST',
-      path: (id: string) => `/pages/${id}/microsoft.graph.sitepage/publish`,
-      emptyRes: true
-    }
-  },
-  verticalSection: {
-    create: {
-      method: 'PUT',
-      path: (id: string) => `/pages/${id}/microsoft.graph.sitepage/canvaslayout/verticalsection`,
-      body: (payload: any) => payload,
-    },
-    get: {
-      method: 'GET',
-      path: (id: string) => `/pages/${id}/microsoft.graph.sitepage/canvaslayout/verticalsection`,
-      body: (payload: any) => payload
-    },
-    update: {
-      method: 'PATCH',
-      path: (id: string) => `/pages/${id}/microsoft.graph.sitepage/canvaslayout/verticalsection`,
-      body: (payload: any) => payload
-    },
-    delete: {
-      method: 'DELETE',
-      path: (id: string) => `/pages/${id}/microsoft.graph.sitepage/canvaslayout/verticalsection`,
-      emptyRes: true,
-    },
-  }
-};
-
 export default class PagesAPIClient {
   public baseUrl: string;
-  public token: string;
-  public proxyAgent: _HttpsProxyAgent | undefined;
+  public headers: HeadersInit;
+  public proxyAgent: _HttpsProxyAgent | Agent;
 
   constructor(options: IPagesAPIClientOptions) {
     this.baseUrl = options.baseUrl;
-    this.token = options.token;
-    this.proxyAgent = options.proxyAgent ?? undefined;
+    this.headers = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json;odata.metadata=none',
+      Authorization: `Bearer ${options.token}`,
+    };
+    this.proxyAgent = options.proxyAgent ?? new https.Agent({
+      rejectUnauthorized: false
+    })
   }
 
   createPage = (payload: any): Promise<any> => {
@@ -90,11 +31,7 @@ export default class PagesAPIClient {
       {
         method: 'POST',
         agent: this.proxyAgent,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json;odata.metadata=none',
-          Authorization: `Bearer ${this.token}`,
-        },
+        headers: this.headers,
         body: JSON.stringify({ ...payload, "@odata.type": "#microsoft.graph.sitepage" }),
       }
     ).then(e => e.json())
@@ -106,11 +43,7 @@ export default class PagesAPIClient {
       {
         agent: this.proxyAgent,
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json;odata.metadata=none',
-          Authorization: `Bearer ${this.token}`,
-        },
+        headers: this.headers,
         body: JSON.stringify({ ...payload, "@odata.type": "#microsoft.graph.sitepage" }),
       }
     ).then(e => e.json())
@@ -122,11 +55,7 @@ export default class PagesAPIClient {
       {
         agent: this.proxyAgent,
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json;odata.metadata=none',
-          Authorization: `Bearer ${this.token}`,
-        }
+        headers: this.headers,
       }
     ).then((e) => {
       return e.json();
@@ -139,56 +68,40 @@ export default class PagesAPIClient {
       {
         method: 'GET',
         agent: this.proxyAgent,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json;odata.metadata=none',
-          Authorization: `Bearer ${this.token}`,
-        }
+        headers: this.headers,
       }
     ).then(e => e.json()).then(e => e.value.map((e: { id: any; }) => e.id));
   };
 
   publishPage = (uuid: string) => {
-    fetch(
+    return fetch(
       `${this.baseUrl}/pages/${uuid}/microsoft.graph.sitepage/publish`,
       {
         agent: this.proxyAgent,
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json;odata.metadata=none',
-          Authorization: `Bearer ${this.token}`,
-        }
+        headers: this.headers,
       }
     )
   };
 
   deletePage = (uuid: string) => {
-    fetch(
+    return fetch(
       `${this.baseUrl}/pages/${uuid}`,
       {
         method: 'DELETE',
         agent: this.proxyAgent,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json;odata.metadata=none',
-          Authorization: `Bearer ${this.token}`,
-        }
+        headers: this.headers,
       }
     )
   };
 
   getWebPartsByPosition = (uuid: string) => {
-    fetch(
+    return fetch(
       `${this.baseUrl}/pages/${uuid}/microsoft.graph.sitepage/getWebPartsByPosition?isInVerticalSection=true`,
       {
         method: 'GET',
         agent: this.proxyAgent,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json;odata.metadata=none',
-          Authorization: `Bearer ${this.token}`,
-        }
+        headers: this.headers,
       }
     )
   }
@@ -199,11 +112,7 @@ export default class PagesAPIClient {
       {
         method: 'POST',
         agent: this.proxyAgent,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json;odata.metadata=none',
-          Authorization: `Bearer ${this.token}`,
-        },
+        headers: this.headers,
         body: JSON.stringify(payload),
       }
     ).then(e => e.json())
@@ -215,11 +124,7 @@ export default class PagesAPIClient {
       {
         method: 'PUT',
         agent: this.proxyAgent,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json;odata.metadata=none',
-          Authorization: `Bearer ${this.token}`,
-        },
+        headers: this.headers,
         body: JSON.stringify(payload),
       }
     ).then(e => e.json())
@@ -231,9 +136,7 @@ export default class PagesAPIClient {
       {
         method: 'DELETE',
         agent: this.proxyAgent,
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-        }
+        headers: this.headers,
       }
     )
   }
@@ -244,9 +147,7 @@ export default class PagesAPIClient {
       {
         method: 'DELETE',
         agent: this.proxyAgent,
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-        }
+        headers: this.headers,
       }
     )
   }
@@ -257,11 +158,7 @@ export default class PagesAPIClient {
       {
         method: 'PATCH',
         agent: this.proxyAgent,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json;odata.metadata=none',
-          Authorization: `Bearer ${this.token}`,
-        },
+        headers: this.headers,
         body: JSON.stringify(payload),
       }
     ).then(e => e.json())
@@ -273,11 +170,7 @@ export default class PagesAPIClient {
       {
         method: 'PATCH',
         agent: this.proxyAgent,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json;odata.metadata=none',
-          Authorization: `Bearer ${this.token}`,
-        },
+        headers: this.headers,
         body: JSON.stringify(payload),
       }
     ).then(e => e.json())
@@ -289,11 +182,7 @@ export default class PagesAPIClient {
       {
         method: 'POST',
         agent: this.proxyAgent,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json;odata.metadata=none',
-          Authorization: `Bearer ${this.token}`,
-        },
+        headers: this.headers,
         body: JSON.stringify(payload),
       }
     ).then(e => e.json())
@@ -305,11 +194,7 @@ export default class PagesAPIClient {
       {
         method: 'POST',
         agent: this.proxyAgent,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json;odata.metadata=none',
-          Authorization: `Bearer ${this.token}`,
-        },
+        headers: this.headers,
         body: JSON.stringify(payload),
       }
     ).then(e => e.json())
@@ -321,11 +206,7 @@ export default class PagesAPIClient {
       {
         method: 'DELETE',
         agent: this.proxyAgent,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json;odata.metadata=none',
-          Authorization: `Bearer ${this.token}`,
-        }
+        headers: this.headers,
       }
     )
   }
@@ -336,17 +217,10 @@ export default class PagesAPIClient {
       {
         method: 'DELETE',
         agent: this.proxyAgent,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json;odata.metadata=none',
-          Authorization: `Bearer ${this.token}`,
-        }
+        headers: this.headers,
       }
     )
   }
-
-
-
 
   deleteWebPart= (uuid: string, id: number): Promise<any> => {
     return fetch(
@@ -354,13 +228,8 @@ export default class PagesAPIClient {
       {
         method: 'DELETE',
         agent: this.proxyAgent,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json;odata.metadata=none',
-          Authorization: `Bearer ${this.token}`,
-        }
+        headers: this.headers,
       }
     )
   }
-
 }

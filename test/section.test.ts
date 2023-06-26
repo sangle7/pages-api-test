@@ -1,7 +1,7 @@
 import { createHorizontalSection, createPage, createVerticalSection, updatePage } from '../src/createMockData';
 import { compareHorizontalSections, compareVerticalSection, createClient, createPageAndGetId } from './utils';
 
-describe.skip('section...', () => {
+describe('section...', () => {
   const client = createClient();
 
   it('create a vertical section', async () => {

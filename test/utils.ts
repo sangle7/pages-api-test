@@ -14,12 +14,12 @@ const proxyAgent = new HttpsProxyAgent({
 });
 
 const token: string = process.env.APP_TOKEN!;
-const baseUrl = "https://canary.graph.microsoft.com/testprodbetasubtypes-for-pages/sites/root";
+const baseUrl = "https://canary.graph.microsoft.com/testprodbetapagesAPI-phase2/sites/root";
 
 export const createClient = () => new PagesAPIClient({
   baseUrl,
   token,
-  proxyAgent
+  // proxyAgent
 })
 
 export const createPageAndGetId = async (client: PagesAPIClient) => {
